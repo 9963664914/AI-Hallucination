@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Model Registry - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1"><i class="fa-solid fa-microchip text-primary me-2"></i> Model Registry</h2>
+            <p class="text-muted mb-0">Configure AI model providers, local mock engines, and API adapters</p>
+        </div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'models_registry:create' %}" class="btn btn-primary-hb">
+            <i class="fa-solid fa-plus me-1"></i> Register New Model
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Active Models Grid -->
+    <div class="row g-4 mb-5">
+        {% for model in models_list %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card-hb p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-secondary-subtle text-light border border-secondary-subtle">
+                            {{ model.provider.name }}
+                        </span>
+                        <span class="badge bg-success-subtle text-success">Active</span>
+                    </div>
+                    <h5 class="fw-bold text-white mb-1">{{ model.name }}</h5>
+                    <div class="text-info small fw-mono mb-2"><code>{{ model.model_identifier }}</code></div>
+                    <p class="text-secondary small mb-3">{{ model.description|default:"No description provided." }}</p>
+                </div>
+                <div class="border-top border-secondary-subtle pt-3 text-muted small d-flex justify-content-between">
+                    <span>Temp: {{ model.temperature }}</span>
+                    <span>Max tokens: {{ model.max_tokens }}</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 text-muted">
+            <p>No models registered yet. Click "Register New Model" to configure one.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

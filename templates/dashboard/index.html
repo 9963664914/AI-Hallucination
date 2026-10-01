@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1"><i class="fa-solid fa-chart-pie text-primary me-2"></i> AI Hallucination Analytics Dashboard</h2>
+            <p class="text-muted mb-0">Empirical model comparison &amp; error category analytics</p>
+        </div>
+        <a href="{% url 'benchmarks:create' %}" class="btn btn-primary-hb">
+            <i class="fa-solid fa-play me-1"></i> New Benchmark Run
+        </a>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card-hb p-3 mb-4">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label text-white small fw-medium mb-1">Filter Dataset</label>
+                <select name="dataset" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Datasets</option>
+                    {% for ds in datasets %}
+                    <option value="{{ ds.id }}" {% if selected_dataset == ds.id|stringformat:"i" %}selected{% endif %}>{{ ds.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-white small fw-medium mb-1">Filter AI Model</label>
+                <select name="model" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Models</option>
+                    {% for m in models %}
+                    <option value="{{ m.id }}" {% if selected_model == m.id|stringformat:"i" %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-white small fw-medium mb-1">Filter Category</label>
+                <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for code, name in categories %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <a href="{% url 'dashboard:index' %}" class="btn btn-sm btn-outline-secondary w-100 mt-4">Reset Filters</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Scorecard Stat Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-danger);">
+                <div class="text-muted small text-uppercase">Overall Hallucination Rate</div>
+                <div class="h2 fw-bold text-danger mb-0">{{ hallucination_rate }}%</div>
+                <div class="text-muted small mt-1">Based on {{ total_evaluated }} evaluations</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-success);">
+                <div class="text-muted small text-uppercase">Factual Accuracy</div>
+                <div class="h2 fw-bold text-success mb-0">{{ factual_accuracy }}%</div>
+                <div class="text-muted small mt-1">Ground truth aligned</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-accent);">
+                <div class="text-muted small text-uppercase">Abstention Accuracy</div>
+                <div class="h2 fw-bold text-info mb-0">{{ abstention_accuracy }}%</div>
+                <div class="text-muted small mt-1">Unanswerable test queries</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-primary);">
+                <div class="text-muted small text-uppercase">Average Composite Score</div>
+                <div class="h2 fw-bold text-primary mb-0">{{ avg_composite }}</div>
+                <div class="text-muted small mt-1">Scale [0.00 &ndash; 1.00]</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Chart.js Visualizations Grid -->
+    <div class="row g-4 mb-4">
+        <!-- Model Comparison Bar Chart -->
+        <div class="col-lg-6">
+            <div class="card-hb p-4 h-100">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i> Model Comparison: Hallucination Rate (%)</h5>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="modelComparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Category Distribution Pie Chart -->
+        <div class="col-lg-6">
+            <div class="card-hb p-4 h-100">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-chart-pie text-warning me-2"></i> Error Taxonomy Breakdown</h5>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="errorDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Performance Radar Chart -->
+        <div class="col-lg-6">
+            <div class="card-hb p-4 h-100">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-spider text-info me-2"></i> Domain Category Hallucination Rate</h5>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="categoryRadarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Composite Scores Line/Bar Chart -->
+        <div class="col-lg-6">
+            <div class="card-hb p-4 h-100">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-chart-line text-success me-2"></i> Model Average Composite Quality Score</h5>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="modelCompositeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Completed Benchmark Runs Table -->
+    <div class="card-hb p-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-history text-primary me-2"></i> Recent Benchmark History</h4>
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Run Title</th>
+                        <th>User</th>
+                        <th>Dataset</th>
+                        <th>Evaluated</th>
+                        <th>Hallucination Rate</th>
+                        <th>Factual Accuracy</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in latest_runs %}
+                    <tr>
+                        <td class="fw-bold text-white">{{ run.title }}</td>
+                        <td>{{ run.user.username }}</td>
+                        <td>{{ run.dataset_version.dataset.name }}</td>
+                        <td>{{ run.completed_questions }} evals</td>
+                        <td class="fw-bold text-danger">{{ run.overall_metrics.hallucination_rate|default:"0.0" }}%</td>
+                        <td class="fw-bold text-success">{{ run.overall_metrics.factual_accuracy|default:"0.0" }}%</td>
+                        <td class="text-muted small">{{ run.created_at|date:"M d, H:i" }}</td>
+                        <td>
+                            <a href="{% url 'benchmarks:detail' pk=run.id %}" class="btn btn-sm btn-outline-info">Inspect</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">No benchmark runs executed yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const chartData = JSON.parse('{{ chart_data_json|escapejs }}');
+
+    // 1. Model Comparison Bar Chart
+    const ctxModel = document.getElementById('modelComparisonChart').getContext('2d');
+    new Chart(ctxModel, {
+        type: 'bar',
+        data: {
+            labels: chartData.model_names,
+            datasets: [{
+                label: 'Hallucination Rate (%)',
+                data: chartData.model_hallucination_rates,
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                borderColor: '#ef4444',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 100, grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+                x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+            },
+            plugins: { legend: { labels: { color: '#f0f6fc' } } }
+        }
+    });
+
+    // 2. Error Category Distribution Doughnut Chart
+    const ctxError = document.getElementById('errorDistributionChart').getContext('2d');
+    new Chart(ctxError, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.error_labels,
+            datasets: [{
+                data: chartData.error_counts,
+                backgroundColor: [
+                    '#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6',
+                    '#ec4899', '#06b6d4', '#64748b', '#f97316'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right', labels: { color: '#f0f6fc', boxWidth: 12 } } }
+        }
+    });
+
+    // 3. Domain Category Radar Chart
+    const ctxCategory = document.getElementById('categoryRadarChart').getContext('2d');
+    new Chart(ctxCategory, {
+        type: 'radar',
+        data: {
+            labels: chartData.category_names,
+            datasets: [{
+                label: 'Hallucination Rate by Category (%)',
+                data: chartData.category_hallucination_rates,
+                backgroundColor: 'rgba(6, 182, 212, 0.2)',
+                borderColor: '#06b6d4',
+                pointBackgroundColor: '#06b6d4'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: '#30363d' },
+                    grid: { color: '#30363d' },
+                    pointLabels: { color: '#8b949e' },
+                    ticks: { backdropColor: 'transparent', color: '#8b949e' }
+                }
+            },
+            plugins: { legend: { labels: { color: '#f0f6fc' } } }
+        }
+    });
+
+    // 4. Model Composite Scores Bar Chart
+    const ctxComp = document.getElementById('modelCompositeChart').getContext('2d');
+    new Chart(ctxComp, {
+        type: 'bar',
+        data: {
+            labels: chartData.model_names,
+            datasets: [{
+                label: 'Avg Composite Score (0-1.0)',
+                data: chartData.model_composite_scores,
+                backgroundColor: 'rgba(99, 102, 241, 0.7)',
+                borderColor: '#6366f1',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, max: 1.0, grid: { color: '#30363d' }, ticks: { color: '#8b949e' } },
+                x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e' } }
+            },
+            plugins: { legend: { labels: { color: '#f0f6fc' } } }
+        }
+    });
+</script>
+{% endblock %}

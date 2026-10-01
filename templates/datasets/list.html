@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Datasets Repository - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1"><i class="fa-solid fa-database text-primary me-2"></i> Benchmark Datasets</h2>
+            <p class="text-muted mb-0">Browse and manage standardized evaluation question datasets</p>
+        </div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'datasets:create' %}" class="btn btn-primary-hb">
+            <i class="fa-solid fa-plus me-1"></i> Create / Upload Dataset
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Category Filter Bar -->
+    <div class="card-hb p-3 mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Dataset Categories</option>
+                    {% for code, name in categories %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                {% if selected_category %}
+                <a href="{% url 'datasets:list' %}" class="btn btn-sm btn-outline-secondary w-100">Clear Filter</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Datasets Grid -->
+    <div class="row g-4">
+        {% for ds in datasets %}
+        <div class="col-md-6">
+            <div class="card-hb p-4 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                            {{ ds.get_category_display }}
+                        </span>
+                        <span class="text-muted small"><i class="fa-solid fa-code-branch me-1"></i> {{ ds.versions.count }} version(s)</span>
+                    </div>
+                    <h4 class="fw-bold text-white mb-2">
+                        <a href="{% url 'datasets:detail' slug=ds.slug %}" class="text-white text-decoration-none">
+                            {{ ds.name }}
+                        </a>
+                    </h4>
+                    <p class="text-secondary small mb-3">{{ ds.description|truncatewords:25 }}</p>
+                </div>
+                <div class="d-flex justify-content-between align-items-center border-top border-secondary-subtle pt-3 mt-3">
+                    <span class="text-muted small">By {{ ds.created_by.username|default:"System Seed" }} &bull; {{ ds.created_at|date:"M d, Y" }}</span>
+                    <a href="{% url 'datasets:detail' slug=ds.slug %}" class="btn btn-sm btn-outline-primary">
+                        View Questions <i class="fa-solid fa-chevron-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5 text-muted">
+            <p>No datasets found in this category.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

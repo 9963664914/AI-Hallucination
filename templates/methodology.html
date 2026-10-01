@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Methodology & Evaluation Metrics - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle mb-2 px-3 py-1">Transparent Science</span>
+        <h1 class="fw-bold text-white mb-2">HalluciBench Evaluation Methodology</h1>
+        <p class="text-secondary lead">Comprehensive breakdown of metrics, scoring formulas, evaluator design, and research limitations.</p>
+    </div>
+
+    <!-- Section 1: Definition of Hallucination -->
+    <div class="card-hb p-4 mb-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i> 1. What Hallucination Means in HalluciBench</h4>
+        <p class="text-secondary">
+            In HalluciBench, an <strong>AI Hallucination</strong> is defined as any generated content in a model's response that is factually false, unverified by ground truth references, internally contradictory, or falsely asserted with high confidence on an unanswerable question.
+        </p>
+        <p class="text-secondary mb-0">
+            Unlike simple grammar or syntax errors, hallucinations represent <em>epistemic failures</em> where the language model generates ungrounded assertions that appear plausible but are factually invalid.
+        </p>
+    </div>
+
+    <!-- Section 2: Metric Formulas -->
+    <div class="card-hb p-4 mb-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-calculator text-primary me-2"></i> 2. Transparent Scoring Formulas</h4>
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Metric Name</th>
+                        <th>Mathematical Formula</th>
+                        <th>Description &amp; Target</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold text-danger">Hallucination Rate (%)</td>
+                        <td>$$\text{Hallucination Rate} = \left( \frac{N_{\text{hallucinated}}}{N_{\text{total}}} \right) \times 100$$</td>
+                        <td>Percentage of evaluated samples flagged as containing hallucinations. Lower is better.</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-success">Factual Accuracy (%)</td>
+                        <td>$$\text{Factual Accuracy} = 100 - \text{Hallucination Rate}$$</td>
+                        <td>Percentage of answers aligned with trusted ground truth reference answers. Higher is better.</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-info">Abstention Accuracy (%)</td>
+                        <td>$$\text{Abstention Acc} = \left( \frac{N_{\text{correct\_abstentions}}}{N_{\text{unanswerable}}} \right) \times 100$$</td>
+                        <td>Accuracy of the model in declining to answer or stating insufficient context on unanswerable questions.</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-warning">Semantic Similarity</td>
+                        <td>$$\text{Sim} = 0.5 \times \text{Jaccard Token Overlap} + 0.5 \times \text{Sequence Ratio}$$</td>
+                        <td>Hybrid n-gram and token distance string matching metric. Range [0.0 - 1.0].</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold text-white">Composite Score</td>
+                        <td>$$\text{Score} = 0.20 S_{\text{exact}} + 0.35 S_{\text{semantic}} + 0.35 S_{\text{fact}} + 0.10 S_{\text{cite}}$$</td>
+                        <td>Weighted multi-signal evaluation score across exact, semantic, factual, and citation signals.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 3: Error Taxonomy -->
+    <div class="card-hb p-4 mb-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-tags text-info me-2"></i> 3. Error Taxonomy Categorization</h4>
+        <div class="row g-3">
+            {% for cat in error_categories %}
+            <div class="col-md-6">
+                <div class="p-3 border border-secondary-subtle rounded bg-body-tertiary">
+                    <h6 class="fw-bold text-white mb-1"><i class="fa-solid fa-bug text-danger me-2"></i> {{ cat.name }}</h6>
+                    <p class="text-muted small mb-0">{{ cat.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Section 4: Known Limitations & Disclaimer -->
+    <div class="card-hb p-4 border-warning">
+        <h4 class="fw-bold text-warning mb-3"><i class="fa-solid fa-shield-cat me-2"></i> 4. Important Disclaimers &amp; Limitations</h4>
+        <div class="alert alert-warning-subtle text-warning-emphasis border border-warning mb-3">
+            <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Evaluation Estimate Notice:</strong> Hallucination detection scores generated by HalluciBench are empirical evaluation estimates based on static reference answers and automated string/semantic matchers. They do not constitute absolute mathematical proof that an answer is true or false in every possible real-world context.
+        </div>
+        <ul class="text-secondary mb-0">
+            <li><strong>Static Reference Answers:</strong> Reference answers represent ground-truth facts as of dataset creation dates. Current-events questions are marked explicitly with date context.</li>
+            <li><strong>Paraphrasing Variability:</strong> Valid model answers that use unexpected synonyms or creative phrasing may occasionally receive lower semantic overlap scores.</li>
+            <li><strong>Extensibility:</strong> Additional evaluators (such as LLM-as-a-judge or exact embedding distance adapters) can be added via the <code>BaseEvaluator</code> interface.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

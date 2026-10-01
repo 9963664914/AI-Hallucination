@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HalluciBench - Standardized AI Hallucination Detection Benchmark{% endblock %}</title>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    {% load static %}
+    <link href="{% static 'css/custom.css' %}" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle py-2">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'landing' %}">
+                <i class="fa-solid fa-brain text-primary"></i>
+                <span>HalluciBench</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard:index' %}"><i class="fa-solid fa-chart-line me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'benchmarks:list' %}"><i class="fa-solid fa-vials me-1"></i> Benchmark Runs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'datasets:list' %}"><i class="fa-solid fa-database me-1"></i> Datasets</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'models_registry:list' %}"><i class="fa-solid fa-microchip me-1"></i> Models</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'methodology' %}"><i class="fa-solid fa-book-bookmark me-1"></i> Methodology</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'api:swagger-ui' %}" target="_blank"><i class="fa-solid fa-code me-1"></i> API Docs</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-2">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'benchmarks:create' %}" class="btn btn-sm btn-primary-hb">
+                            <i class="fa-solid fa-play me-1"></i> New Benchmark
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-user-circle me-1"></i> {{ user.username }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fa-solid fa-id-card me-2"></i> Profile & History</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:password_change' %}"><i class="fa-solid fa-key me-2"></i> Change Password</a></li>
+                                {% if user.is_staff %}
+                                <li><a class="dropdown-item" href="/admin/" target="_blank"><i class="fa-solid fa-shield-halved me-2"></i> Admin Panel</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-outline-light">Log In</a>
+                        <a href="{% url 'accounts:register' %}" class="btn btn-sm btn-primary-hb">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages Container -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 border-top border-secondary-subtle mt-5 text-muted">
+        <div class="container text-center">
+            <p class="mb-1 small">
+                <strong>HalluciBench</strong> &mdash; Standardized Open AI Hallucination Evaluation & Benchmarking Platform
+            </p>
+            <p class="mb-0 small text-secondary">
+                <a href="{% url 'methodology' %}" class="text-secondary text-decoration-underline me-3">Methodology & Disclaimers</a>
+                <a href="{% url 'api:swagger-ui' %}" class="text-secondary text-decoration-underline me-3" target="_blank">OpenAPI Specs</a>
+                <span>Hallucination score is an empirical evaluation estimate, not absolute proof.</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

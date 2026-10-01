@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row g-4">
+        <!-- Profile Info Card -->
+        <div class="col-md-4">
+            <div class="card-hb p-4 text-center mb-4">
+                <div class="mb-3">
+                    <i class="fa-solid fa-circle-user text-primary" style="font-size: 4.5rem;"></i>
+                </div>
+                <h4 class="fw-bold text-white mb-1">{{ user.username }}</h4>
+                <p class="text-muted small mb-2">{{ user.email|default:"No email set" }}</p>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 mb-3">
+                    {{ user_profile.get_role_display }}
+                </span>
+                {% if user_profile.organization %}
+                <div class="text-secondary small mb-1"><i class="fa-solid fa-building me-1"></i> {{ user_profile.organization }}</div>
+                {% endif %}
+                <div class="text-muted small"><i class="fa-solid fa-calendar me-1"></i> Member since {{ user.date_joined|date:"M Y" }}</div>
+            </div>
+
+            <!-- Profile Edit Form -->
+            <div class="card-hb p-4">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-user-gear text-primary me-2"></i> Update Profile</h5>
+                <form method="post" action="{% url 'accounts:profile' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label text-white small fw-medium">First Name</label>
+                        <input type="text" name="first_name" class="form-control form-control-sm" value="{{ user.first_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white small fw-medium">Last Name</label>
+                        <input type="text" name="last_name" class="form-control form-control-sm" value="{{ user.last_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white small fw-medium">Email Address</label>
+                        <input type="email" name="email" class="form-control form-control-sm" value="{{ user.email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white small fw-medium">Organization</label>
+                        <input type="text" name="organization" class="form-control form-control-sm" value="{{ user_profile.organization }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-white small fw-medium">Role</label>
+                        <select name="role" class="form-select form-select-sm">
+                            <option value="researcher" {% if user_profile.role == 'researcher' %}selected{% endif %}>AI Researcher</option>
+                            <option value="eval_engineer" {% if user_profile.role == 'eval_engineer' %}selected{% endif %}>Evaluation Engineer</option>
+                            <option value="product_manager" {% if user_profile.role == 'product_manager' %}selected{% endif %}>Product Manager</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary-hb w-100">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- User Run History -->
+        <div class="col-md-8">
+            <div class="card-hb p-4">
+                <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-clock-history text-primary me-2"></i> Your Benchmark Run History</h4>
+                
+                <div class="table-responsive">
+                    <table class="table table-hb align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Dataset</th>
+                                <th>Status</th>
+                                <th>Evaluations</th>
+                                <th>Hallucination Rate</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for run in recent_runs %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'benchmarks:detail' pk=run.id %}" class="fw-bold text-white text-decoration-none">
+                                        {{ run.title }}
+                                    </a>
+                                </td>
+                                <td>{{ run.dataset_version.dataset.name }}</td>
+                                <td>
+                                    {% if run.status == 'completed' %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">Completed</span>
+                                    {% elif run.status == 'running' %}
+                                    <span class="badge bg-info-subtle text-info border border-info-subtle">Running</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary-subtle text-light border border-secondary-subtle">{{ run.status|title }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ run.completed_questions }} / {{ run.total_questions }}</td>
+                                <td class="fw-bold text-danger">{{ run.overall_metrics.hallucination_rate|default:"0.0" }}%</td>
+                                <td class="text-muted small">{{ run.created_at|date:"M d, H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'benchmarks:detail' pk=run.id %}" class="btn btn-sm btn-outline-info">View</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">
+                                    No benchmark runs performed yet. <a href="{% url 'benchmarks:create' %}">Launch your first benchmark</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

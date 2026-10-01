@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dataset.name }} - HalluciBench Dataset{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Dataset Header -->
+    <div class="card-hb p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 me-2 mb-2">
+                    {{ dataset.get_category_display }}
+                </span>
+                <h2 class="fw-bold text-white mb-2">{{ dataset.name }}</h2>
+                <p class="text-secondary mb-0">{{ dataset.description }}</p>
+            </div>
+            {% if active_version %}
+            <div class="dropdown">
+                <button class="btn btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fa-solid fa-download me-1"></i> Export Dataset
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="{% url 'datasets:export' slug=dataset.slug version_id=active_version.id %}?format=json"><i class="fa-solid fa-file-code me-2"></i> Export JSON</a></li>
+                    <li><a class="dropdown-item" href="{% url 'datasets:export' slug=dataset.slug version_id=active_version.id %}?format=csv"><i class="fa-solid fa-file-csv me-2"></i> Export CSV</a></li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="d-flex align-items-center gap-4 text-muted small border-top border-secondary-subtle pt-3">
+            <div><strong class="text-white">Active Version:</strong> {{ active_version.version|default:"v1.0" }}</div>
+            <div><strong class="text-white">Total Questions:</strong> {{ questions.count }}</div>
+            <div><strong class="text-white">Created:</strong> {{ dataset.created_at|date:"M d, Y" }}</div>
+        </div>
+    </div>
+
+    <!-- Questions Search & Filter Bar -->
+    <div class="card-hb p-3 mb-4">
+        <form method="get" class="row g-3 align-items-center">
+            {% if active_version %}
+            <input type="hidden" name="version" value="{{ active_version.id }}">
+            {% endif %}
+            <div class="col-md-5">
+                <input type="text" name="q" class="form-control form-control-sm" placeholder="Search question text or reference..." value="{{ q_search }}">
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for code, name in categories %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="difficulty" class="form-select form-select-sm">
+                    <option value="">All Difficulties</option>
+                    {% for code, name in difficulties %}
+                    <option value="{{ code }}" {% if selected_difficulty == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-primary-hb w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Questions Table -->
+    <div class="card-hb p-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-list-check text-primary me-2"></i> Benchmark Questions ({{ questions.count }})</h4>
+        
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>Question Prompt</th>
+                        <th>Expected Reference Answer</th>
+                        <th>Category</th>
+                        <th>Difficulty</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in questions %}
+                    <tr>
+                        <td class="text-muted fw-mono">#{{ q.id }}</td>
+                        <td>
+                            <div class="fw-medium text-white mb-1">{{ q.question_text }}</div>
+                            {% if q.reference_source %}
+                            <div class="text-muted small"><i class="fa-solid fa-quote-left me-1"></i> Source: {{ q.reference_source }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-secondary small" style="max-width: 300px;">
+                            {{ q.expected_answer }}
+                        </td>
+                        <td><span class="badge bg-secondary-subtle text-light">{{ q.get_category_display }}</span></td>
+                        <td>
+                            {% if q.difficulty == 'easy' %}
+                            <span class="badge bg-success-subtle text-success">Easy</span>
+                            {% elif q.difficulty == 'medium' %}
+                            <span class="badge bg-warning-subtle text-warning">Medium</span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger">Hard</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if q.is_unanswerable %}
+                            <span class="badge bg-info-subtle text-info border border-info-subtle"><i class="fa-solid fa-shield-halved me-1"></i> Abstention Test</span>
+                            {% else %}
+                            <span class="badge bg-dark text-muted">Factual</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            No benchmark questions match your filter criteria.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

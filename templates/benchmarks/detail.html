@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ run.title }} - Benchmark Run Analysis{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Banner -->
+    <div class="card-hb p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 me-2 mb-2">
+                    {{ run.dataset_version.dataset.name }} ({{ run.dataset_version.version }})
+                </span>
+                <h2 class="fw-bold text-white mb-2">{{ run.title }}</h2>
+                <p class="text-secondary small mb-0">Executed by <strong>{{ run.user.username }}</strong> &bull; {{ run.created_at|date:"M d, Y H:i" }}</p>
+            </div>
+            <div id="status-badge-container">
+                {% if run.status == 'completed' %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6">
+                    <i class="fa-solid fa-circle-check me-1"></i> Completed
+                </span>
+                {% elif run.status == 'running' %}
+                <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 fs-6">
+                    <i class="fa-solid fa-spinner fa-spin me-1"></i> Running...
+                </span>
+                <a href="{% url 'benchmarks:cancel' pk=run.id %}" class="btn btn-sm btn-outline-danger ms-2">Cancel</a>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-3 py-2 fs-6">{{ run.get_status_display }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Progress Bar for Running Runs -->
+        <div class="mb-3 {% if run.status != 'running' %}d-none{% endif %}" id="progress-container">
+            <div class="d-flex justify-content-between text-muted small mb-1">
+                <span>Progress: <span id="completed-count">{{ run.completed_questions }}</span> / {{ run.total_questions }} evaluations</span>
+                <span id="progress-text">{{ run.progress_percentage }}%</span>
+            </div>
+            <div class="progress" style="height: 12px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" id="progress-bar" style="width: {{ run.progress_percentage }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Metrics Scorecards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-danger);">
+                <div class="text-muted small text-uppercase">Hallucination Rate</div>
+                <div class="h2 fw-bold text-danger mb-0">{{ run.overall_metrics.hallucination_rate|default:"0.0" }}%</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-success);">
+                <div class="text-muted small text-uppercase">Factual Accuracy</div>
+                <div class="h2 fw-bold text-success mb-0">{{ run.overall_metrics.factual_accuracy|default:"0.0" }}%</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-accent);">
+                <div class="text-muted small text-uppercase">Abstention Accuracy</div>
+                <div class="h2 fw-bold text-info mb-0">{{ run.overall_metrics.abstention_accuracy|default:"0.0" }}%</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="border-left-color: var(--hb-primary);">
+                <div class="text-muted small text-uppercase">Avg Composite Score</div>
+                <div class="h2 fw-bold text-primary mb-0">{{ run.overall_metrics.avg_composite_score|default:"0.00" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Per-Model Performance Breakdown Table -->
+    <div class="card-hb p-4 mb-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-robot text-primary me-2"></i> Model Scorecards</h4>
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Model Name</th>
+                        <th>Sample Size</th>
+                        <th>Hallucination Rate</th>
+                        <th>Factual Accuracy</th>
+                        <th>Abstention Acc</th>
+                        <th>Avg Composite Score</th>
+                        <th>Avg Latency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m_run in run_models %}
+                    <tr>
+                        <td class="fw-bold text-white">
+                            {{ m_run.model.name }}
+                            <div class="text-muted small fw-mono"><code>{{ m_run.model.model_identifier }}</code></div>
+                        </td>
+                        <td>{{ m_run.metrics.sample_size|default:0 }}</td>
+                        <td class="fw-bold text-danger">{{ m_run.metrics.hallucination_rate|default:"0.0" }}%</td>
+                        <td class="fw-bold text-success">{{ m_run.metrics.factual_accuracy|default:"0.0" }}%</td>
+                        <td class="text-info">{{ m_run.metrics.abstention_accuracy|default:"0.0" }}%</td>
+                        <td class="fw-bold text-primary">{{ m_run.metrics.avg_composite_score|default:"0.00" }}</td>
+                        <td class="text-muted small">{{ m_run.metrics.avg_latency_ms|default:0 }} ms</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-muted text-center">No models evaluated.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Question-Level Evaluation Results Table -->
+    <div class="card-hb p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-white mb-0"><i class="fa-solid fa-microscope text-primary me-2"></i> Question-Level Evaluation Results</h4>
+            
+            <form method="get" class="d-flex gap-2">
+                <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    {% for code, name in categories %}
+                    <option value="{{ code }}" {% if selected_category == code %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-check form-switch ms-2 d-flex align-items-center">
+                    <input class="form-check-input me-1" type="checkbox" name="hallucinated" value="true" id="hallCheck" {% if hallucination_only %}checked{% endif %} onchange="this.form.submit()">
+                    <label class="form-check-label text-danger small fw-bold" for="hallCheck">Hallucinations Only</label>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Question</th>
+                        <th>Model Output</th>
+                        <th>Status</th>
+                        <th>Composite Score</th>
+                        <th>Errors / Labels</th>
+                        <th>Inspect</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in responses %}
+                    <tr>
+                        <td class="fw-bold text-white small" style="white-space: nowrap;">{{ r.model.name }}</td>
+                        <td style="max-width: 250px;" class="small text-secondary">
+                            {{ r.question.question_text|truncatewords:15 }}
+                        </td>
+                        <td style="max-width: 300px;" class="small text-white">
+                            {{ r.response_text|truncatewords:20 }}
+                        </td>
+                        <td>
+                            {% if r.evaluation.is_hallucination %}
+                            <span class="badge badge-hallucination"><i class="fa-solid fa-triangle-exclamation me-1"></i> Hallucination</span>
+                            {% elif r.evaluation.is_abstained %}
+                            <span class="badge badge-abstained"><i class="fa-solid fa-shield-halved me-1"></i> Abstained</span>
+                            {% else %}
+                            <span class="badge badge-accurate"><i class="fa-solid fa-check me-1"></i> Accurate</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold text-primary">{{ r.evaluation.composite_score|default:"0.00" }}</td>
+                        <td>
+                            {% for cat in r.evaluation.error_categories.all %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle small me-1">{{ cat.name }}</span>
+                            {% empty %}
+                            <span class="text-muted small">&mdash;</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{% url 'dashboard:question_analysis' response_id=r.id %}" class="btn btn-sm btn-outline-info">
+                                Auditable Reasoning <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">No responses evaluated matching filters.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if run.status == 'running' %}
+<script>
+    function checkProgress() {
+        fetch("{% url 'benchmarks:progress' pk=run.id %}")
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('completed-count').innerText = data.completed_questions;
+                document.getElementById('progress-text').innerText = data.progress_percentage + '%';
+                document.getElementById('progress-bar').style.width = data.progress_percentage + '%';
+
+                if (data.status === 'completed') {
+                    window.location.reload();
+                } else if (data.status === 'running') {
+                    setTimeout(checkProgress, 2000);
+                }
+            })
+            .catch(err => console.error(err));
+    }
+    setTimeout(checkProgress, 2000);
+</script>
+{% endif %}
+{% endblock %}

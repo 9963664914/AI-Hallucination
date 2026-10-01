@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Start New Benchmark Run - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card-hb p-4">
+                <h3 class="fw-bold text-white mb-2"><i class="fa-solid fa-play-circle text-primary me-2"></i> Launch Benchmark Run</h3>
+                <p class="text-muted small mb-4">Select dataset version, target models, and evaluation configuration.</p>
+
+                <form method="post" action="{% url 'benchmarks:create' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label text-white fw-medium">Benchmark Run Title</label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Comparative Hallucination Eval - GPT-4 vs Mock Engine" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-white fw-medium">Dataset &amp; Version</label>
+                        <select name="dataset_version" class="form-select" required>
+                            {% for ds in datasets %}
+                                {% for ver in ds.versions.all %}
+                                <option value="{{ ver.id }}">
+                                    {{ ds.name }} [{{ ver.version }}] &mdash; {{ ds.get_category_display }} ({{ ver.questions.count }} questions)
+                                </option>
+                                {% endfor %}
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label text-white fw-medium">Select Target Models to Evaluate</label>
+                        <div class="vstack gap-2 border border-secondary-subtle rounded p-3 bg-body-tertiary" style="max-height: 250px; overflow-y: auto;">
+                            {% for m in models_list %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="models" value="{{ m.id }}" id="model_{{ m.id }}" checked>
+                                <label class="form-check-label text-white d-flex justify-content-between" for="model_{{ m.id }}">
+                                    <span><strong>{{ m.name }}</strong> <code>({{ m.model_identifier }})</code></span>
+                                    <span class="badge bg-secondary-subtle text-light">{{ m.provider.name }}</span>
+                                </label>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted mb-0 small">No active models available.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'benchmarks:list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary-hb px-4">
+                            <i class="fa-solid fa-rocket me-1"></i> Start Benchmark Execution
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

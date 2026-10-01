@@ -1,0 +1,125 @@
+/* HalluciBench Professional Modern Research UI Theme */
+
+:root {
+    --hb-bg: #0d1117;
+    --hb-card-bg: #161b22;
+    --hb-border: #30363d;
+    --hb-primary: #6366f1;
+    --hb-primary-hover: #4f46e5;
+    --hb-accent: #06b6d4;
+    --hb-text: #f0f6fc;
+    --hb-muted: #8b949e;
+    --hb-success: #10b981;
+    --hb-danger: #ef4444;
+    --hb-warning: #f59e0b;
+}
+
+body {
+    background-color: var(--hb-bg);
+    color: var(--hb-text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.35rem;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #818cf8 0%, #38bdf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.card-hb {
+    background-color: var(--hb-card-bg);
+    border: 1px solid var(--hb-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hb:hover {
+    box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+}
+
+.stat-card {
+    border-left: 4px solid var(--hb-primary);
+    padding: 1.25rem;
+    background-color: var(--hb-card-bg);
+    border-radius: 8px;
+    border-top: 1px solid var(--hb-border);
+    border-right: 1px solid var(--hb-border);
+    border-bottom: 1px solid var(--hb-border);
+}
+
+.badge-hallucination {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badge-accurate {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.badge-abstained {
+    background-color: rgba(6, 182, 212, 0.2);
+    color: #22d3ee;
+    border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+.table-hb {
+    color: var(--hb-text);
+}
+
+.table-hb th {
+    background-color: #21262d;
+    color: var(--hb-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--hb-border);
+}
+
+.table-hb td {
+    border-bottom: 1px solid var(--hb-border);
+    vertical-align: middle;
+}
+
+.form-control, .form-select {
+    background-color: #0d1117;
+    border: 1px solid var(--hb-border);
+    color: var(--hb-text);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #0d1117;
+    border-color: var(--hb-primary);
+    color: var(--hb-text);
+    box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
+}
+
+.btn-primary-hb {
+    background: linear-gradient(135deg, var(--hb-primary) 0%, var(--hb-primary-hover) 100%);
+    border: none;
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-primary-hb:hover {
+    background: linear-gradient(135deg, var(--hb-primary-hover) 0%, #3730a3 100%);
+    color: #fff;
+}
+
+.hero-gradient {
+    background: radial-gradient(circle at top center, rgba(99, 102, 241, 0.15) 0%, rgba(13, 17, 23, 0) 70%);
+}

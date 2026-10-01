@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Question Evaluation Analysis #{{ response.id }} - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Navigation Breadcrumb -->
+    <div class="mb-4">
+        <a href="{% url 'benchmarks:detail' pk=response.benchmark_run.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Benchmark Run #{{ response.benchmark_run.id }}
+        </a>
+    </div>
+
+    <!-- Main Question Header Card -->
+    <div class="card-hb p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <span class="badge bg-secondary-subtle text-light border border-secondary-subtle px-3 py-1 me-2 mb-2">
+                    {{ question.get_category_display }}
+                </span>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 me-2 mb-2">
+                    Model: {{ response.model.name }}
+                </span>
+                {% if question.is_unanswerable %}
+                <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-1 me-2 mb-2">
+                    <i class="fa-solid fa-shield-halved me-1"></i> Abstention Test Query
+                </span>
+                {% endif %}
+                <h3 class="fw-bold text-white mt-1 mb-0">Question Level Auditable Evaluation</h3>
+            </div>
+            <div>
+                {% if evaluation.is_hallucination %}
+                <span class="badge badge-hallucination fs-6 px-3 py-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Hallucination Detected</span>
+                {% elif evaluation.is_abstained %}
+                <span class="badge badge-abstained fs-6 px-3 py-2"><i class="fa-solid fa-shield-halved me-1"></i> Correct Abstention</span>
+                {% else %}
+                <span class="badge badge-accurate fs-6 px-3 py-2"><i class="fa-solid fa-circle-check me-1"></i> Accurate Response</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Side-by-Side Prompt, Reference, Model Response Comparison -->
+    <div class="row g-4 mb-4">
+        <!-- Benchmark Question -->
+        <div class="col-md-4">
+            <div class="card-hb p-4 h-100">
+                <h5 class="fw-bold text-primary mb-3"><i class="fa-solid fa-circle-question me-2"></i> 1. Benchmark Question</h5>
+                <div class="p-3 bg-body-tertiary rounded border border-secondary-subtle text-white mb-3">
+                    {{ question.question_text }}
+                </div>
+                <div class="text-muted small">
+                    <strong>Difficulty:</strong> {{ question.get_difficulty_display }}<br>
+                    <strong>Factual basis:</strong> {% if question.is_factual %}Verifiable Factual Answer{% else %}Unanswerable / Insufficient Info{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Trusted Reference Answer -->
+        <div class="col-md-4">
+            <div class="card-hb p-4 h-100">
+                <h5 class="fw-bold text-success mb-3"><i class="fa-solid fa-book-bookmark me-2"></i> 2. Ground Truth Reference</h5>
+                <div class="p-3 bg-body-tertiary rounded border border-secondary-subtle text-white mb-3">
+                    {{ question.expected_answer }}
+                </div>
+                {% if question.reference_source %}
+                <div class="text-muted small">
+                    <i class="fa-solid fa-link me-1"></i> <strong>Trusted Source:</strong> {{ question.reference_source }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Actual Model Response -->
+        <div class="col-md-4">
+            <div class="card-hb p-4 h-100">
+                <h5 class="fw-bold text-info mb-3"><i class="fa-solid fa-robot me-2"></i> 3. Actual Model Response</h5>
+                <div class="p-3 bg-body-tertiary rounded border border-secondary-subtle text-white mb-3">
+                    {{ response.response_text }}
+                </div>
+                <div class="text-muted small d-flex justify-content-between">
+                    <span><strong>Latency:</strong> {{ response.latency_ms }} ms</span>
+                    <span><strong>Tokens:</strong> {{ response.token_count }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluator Metric Breakdown Scorecard -->
+    <div class="card-hb p-4 mb-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-gauge-high text-primary me-2"></i> Evaluation Signal Scores</h4>
+        <div class="row g-3 text-center">
+            <div class="col-md-3">
+                <div class="p-3 border border-secondary-subtle rounded bg-body-tertiary">
+                    <div class="text-muted small">Exact Match Score</div>
+                    <div class="h3 fw-bold text-white mb-0">{{ evaluation.exact_match_score|default:"0.00" }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-secondary-subtle rounded bg-body-tertiary">
+                    <div class="text-muted small">Semantic Similarity</div>
+                    <div class="h3 fw-bold text-info mb-0">{{ evaluation.semantic_similarity_score|default:"0.00" }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-secondary-subtle rounded bg-body-tertiary">
+                    <div class="text-muted small">Factuality &amp; Abstention Score</div>
+                    <div class="h3 fw-bold text-success mb-0">{{ evaluation.factuality_score|default:"0.00" }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 border border-secondary-subtle rounded bg-body-tertiary">
+                    <div class="text-muted small">Composite Quality Score</div>
+                    <div class="h3 fw-bold text-primary mb-0">{{ evaluation.composite_score|default:"0.00" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auditable Evaluator Reasoning & Error Taxonomy -->
+    <div class="card-hb p-4 mb-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-brain text-warning me-2"></i> Auditable Evaluator Reasoning</h4>
+        
+        <div class="p-3 bg-dark border border-secondary-subtle rounded text-light mb-4 font-monospace small">
+            {{ evaluation.evaluator_reasoning }}
+        </div>
+
+        <h5 class="fw-bold text-white mb-2">Error Taxonomy Classifications:</h5>
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            {% for cat in error_categories %}
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6">
+                <i class="fa-solid fa-bug me-1"></i> {{ cat.name }}
+            </span>
+            {% empty %}
+            <span class="text-muted small">No error classifications assigned (Response verified factual).</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Supporting Claim Evidence Table -->
+    <div class="card-hb p-4">
+        <h4 class="fw-bold text-white mb-3"><i class="fa-solid fa-magnifying-glass text-info me-2"></i> Extracted Claim Evidence Analysis</h4>
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Claim Text Snippet</th>
+                        <th>Evidence Status</th>
+                        <th>Evaluator Explanation</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ev in evidences %}
+                    <tr>
+                        <td class="fw-medium text-white" style="max-width: 300px;">{{ ev.claim_text }}</td>
+                        <td>
+                            {% if ev.status == 'supported' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="fa-solid fa-check me-1"></i> Supported</span>
+                            {% elif ev.status == 'contradicted' %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="fa-solid fa-xmark me-1"></i> Contradicted</span>
+                            {% elif ev.status == 'unsupported' %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle"><i class="fa-solid fa-triangle-exclamation me-1"></i> Unsupported</span>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-light border border-secondary-subtle">Unverifiable</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-secondary small">{{ ev.reasoning }}</td>
+                        <td class="fw-bold text-primary">{{ ev.confidence }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-3 text-muted">No individual claim evidence logged.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

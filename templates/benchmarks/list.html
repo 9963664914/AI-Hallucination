@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Benchmark Runs - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1"><i class="fa-solid fa-vials text-primary me-2"></i> Benchmark Runs</h2>
+            <p class="text-muted mb-0">View execution progress, history, and detailed model scorecards</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'benchmarks:compare' %}" class="btn btn-outline-info">
+                <i class="fa-solid fa-scale-balanced me-1"></i> Compare Runs
+            </a>
+            <a href="{% url 'benchmarks:create' %}" class="btn btn-primary-hb">
+                <i class="fa-solid fa-plus me-1"></i> Start Benchmark
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card-hb p-3 mb-4">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">All Run Statuses</option>
+                    {% for code, label in status_choices %}
+                    <option value="{{ code }}" {% if status_filter == code %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    <!-- Runs Table -->
+    <div class="card-hb p-4">
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Run Title</th>
+                        <th>User</th>
+                        <th>Dataset</th>
+                        <th>Status / Progress</th>
+                        <th>Evaluated</th>
+                        <th>Hallucination Rate</th>
+                        <th>Created</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in runs %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'benchmarks:detail' pk=run.id %}" class="fw-bold text-white text-decoration-none">
+                                {{ run.title }}
+                            </a>
+                        </td>
+                        <td>{{ run.user.username }}</td>
+                        <td>{{ run.dataset_version.dataset.name }} ({{ run.dataset_version.version }})</td>
+                        <td>
+                            {% if run.status == 'completed' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="fa-solid fa-circle-check me-1"></i> Completed
+                            </span>
+                            {% elif run.status == 'running' %}
+                            <div class="progress" style="height: 16px; min-width: 120px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: {{ run.progress_percentage }}%;">
+                                    {{ run.progress_percentage }}%
+                                </div>
+                            </div>
+                            {% else %}
+                            <span class="badge bg-secondary-subtle text-light">{{ run.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ run.completed_questions }} / {{ run.total_questions }}</td>
+                        <td class="fw-bold text-danger">{{ run.overall_metrics.hallucination_rate|default:"0.0" }}%</td>
+                        <td class="text-muted small">{{ run.created_at|date:"M d, H:i" }}</td>
+                        <td>
+                            <a href="{% url 'benchmarks:detail' pk=run.id %}" class="btn btn-sm btn-outline-info">
+                                Analysis <i class="fa-solid fa-chevron-right ms-1"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            No benchmark runs found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

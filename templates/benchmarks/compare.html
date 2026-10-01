@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Benchmark Run Comparison - HalluciBench{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-white mb-1"><i class="fa-solid fa-scale-balanced text-primary me-2"></i> Comparative Benchmark Analysis</h2>
+            <p class="text-muted mb-0">Side-by-side metric comparison across benchmark runs</p>
+        </div>
+        <a href="{% url 'benchmarks:list' %}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i> Back to Runs List
+        </a>
+    </div>
+
+    <!-- Select Runs Form -->
+    <div class="card-hb p-3 mb-4">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-md-10">
+                <label class="form-label text-white small fw-medium mb-1">Select Benchmark Runs to Compare Side-by-Side:</label>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for r in all_runs %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="run_id" value="{{ r.id }}" id="run_chk_{{ r.id }}" {% if r.id in selected_ids %}checked{% endif %}>
+                        <label class="form-check-label text-white small" for="run_chk_{{ r.id }}">
+                            #{{ r.id }} - {{ r.title }} <code>({{ r.dataset_version.dataset.name }})</code>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-primary-hb w-100 mt-3">Compare Selected</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Comparison Table -->
+    {% if runs %}
+    <div class="card-hb p-4">
+        <div class="table-responsive">
+            <table class="table table-hb align-middle mb-0 text-center">
+                <thead>
+                    <tr>
+                        <th class="text-start">Metric / Property</th>
+                        {% for run in runs %}
+                        <th class="text-primary fs-6">Run #{{ run.id }}: {{ run.title }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="text-start fw-bold text-white">Dataset &amp; Version</td>
+                        {% for run in runs %}
+                        <td>{{ run.dataset_version.dataset.name }} ({{ run.dataset_version.version }})</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-white">Sample Size (Evaluations)</td>
+                        {% for run in runs %}
+                        <td class="fw-bold">{{ run.overall_metrics.sample_size|default:run.total_questions }} evals</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-white">Models Tested</td>
+                        {% for run in runs %}
+                        <td>
+                            {% for m in run.target_models.all %}
+                            <span class="badge bg-secondary-subtle text-light me-1">{{ m.name }}</span>
+                            {% endfor %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-danger">Hallucination Rate (%)</td>
+                        {% for run in runs %}
+                        <td class="fw-bold fs-5 text-danger">{{ run.overall_metrics.hallucination_rate|default:"0.0" }}%</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-success">Factual Accuracy (%)</td>
+                        {% for run in runs %}
+                        <td class="fw-bold fs-5 text-success">{{ run.overall_metrics.factual_accuracy|default:"0.0" }}%</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-info">Abstention Accuracy (%)</td>
+                        {% for run in runs %}
+                        <td class="fw-bold text-info">{{ run.overall_metrics.abstention_accuracy|default:"0.0" }}%</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-primary">Avg Composite Score</td>
+                        {% for run in runs %}
+                        <td class="fw-bold text-primary fs-5">{{ run.overall_metrics.avg_composite_score|default:"0.00" }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-white">Avg Semantic Similarity</td>
+                        {% for run in runs %}
+                        <td>{{ run.overall_metrics.avg_semantic_similarity|default:"0.00" }}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        <td class="text-start fw-bold text-white">Avg Factuality Score</td>
+                        {% for run in runs %}
+                        <td>{{ run.overall_metrics.avg_factuality_score|default:"0.00" }}</td>
+                        {% endfor %}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card-hb p-5 text-center text-muted">
+        <p>No benchmark runs selected. Select at least 2 completed runs above to compare.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
